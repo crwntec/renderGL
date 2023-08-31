@@ -133,35 +133,31 @@ int main() {
     glewInit();
     gl_log("Creating Buffers\n");
     // Create VertexBuffers
-    std::vector<float> points = {
-    -0.5f,  0.5f,  0.0f,
-     0.5f, -0.5f,  0.0f,
-    -0.5f, -0.5f,  0.0f,
-    -0.5f,  0.5f,  0.0f,
-     0.5f,  0.5f,  0.0f,
-     0.5f, -0.5f,  0.0f,
+    float vertices[] = {
+    -0.5f,  0.5f,  0.0f,    1.0f, 0.0f, 0.0f,
+     0.5f,  0.5f,  0.0f,    0.0f, 1.0f, 0.0f,
+     0.5f, -0.5f,  0.0f,    0.0f, 0.0f, 1.0f,
+     -0.5f, -0.5f, 0.0f,    0.5f, 0.5f, 0.5f,
     };
-
-    std::vector<float> obj2 = {
-         0.8f,  0.5f,  0.0f,
-         0.8f, -0.5f,  0.0f,
-        -0.8f, -0.5f,  0.0f,
+    unsigned int indices[]{
+        0,1,2,
+        2,3,0
     };
+    unsigned int VBO, VAO, EBO;
+    glGenVertexArrays(1, &VAO);
+    glGenBuffers(1, &VBO);
+    glGenBuffers(1, &EBO);
 
-    std::vector<GLuint> vbos(2);
-    std::vector<GLuint> vaos(2);
+    glBindVertexArray(VAO);
+    glBindBuffer(GL_ARRAY_BUFFER,VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)(3*sizeof(float)));
+    glEnableVertexAttribArray(1);
 
-    for (int i = 0; i < 2; ++i) {
-        glGenBuffers(1, &vbos[i]);
-        glBindBuffer(GL_ARRAY_BUFFER, vbos[i]);
-        glBufferData(GL_ARRAY_BUFFER, (i == 0 ? points : obj2).size() * sizeof(float), (i == 0 ? points : obj2).data(), GL_STATIC_DRAW);
-
-        glGenVertexArrays(1, &vaos[i]);
-        glBindVertexArray(vaos[i]);
-        glEnableVertexAttribArray(0);
-        glBindBuffer(GL_ARRAY_BUFFER, vbos[i]);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
-    }
     gl_log("Loading and Compiling Shaders\n");
     //Create and Compile Shaders
     std::string vertex_shader = readShaderCode("test_vs.glsl");
@@ -181,7 +177,6 @@ int main() {
     glAttachShader(shader_programme, vs);
     glLinkProgram(shader_programme);
 
-    GLint screenSizeUniform = glGetUniformLocation(shader_programme, "screenSize");
     /* Loop until the user closes the window */
     gl_log("openGL initilized. Ready to render \n");
     while (!glfwWindowShouldClose(window))
@@ -193,12 +188,8 @@ int main() {
 
         // Use the shader program
         glUseProgram(shader_programme);
-        glUniform2f(screenSizeUniform, g_gl_width, g_gl_height);
-
-        for (int i = 0; i < 2; ++i) {
-            glBindVertexArray(vaos[i]);
-            glDrawArrays(GL_TRIANGLES, 0, (i == 0 ? points : obj2).size() / 3);
-        }
+        glBindVertexArray(VAO);
+        glDrawElements(GL_TRIANGLES, sizeof(indices), GL_UNSIGNED_INT, 0);
 
         // Unbind VAOs and shader program
         glBindVertexArray(0);
